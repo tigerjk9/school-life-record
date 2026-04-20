@@ -12,7 +12,7 @@ NICE에서 내보낸 학생부 XLS 파일을 업로드하면 Google Gemini AI가
 
 ```bash
 # 1. 저장소 클론
-git clone https://github.com/Dot-Connector/school-life-record.git
+git clone https://github.com/tigerjk9/school-life-record.git
 cd school-life-record
 
 # 2. 가상환경 생성
