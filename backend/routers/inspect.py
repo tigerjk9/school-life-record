@@ -8,7 +8,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from backend import state
-from backend.database import get_connection
+from backend.database import DEFAULT_PROMPT, get_connection
 from backend.models import (
     GeminiConnectRequest,
     GeminiConnectResponse,
@@ -53,6 +53,28 @@ def get_prompt() -> PromptResponse:
 
 
 MAX_PROMPT = 20_000
+
+
+@router.post("/prompt/reset", response_model=PromptResponse)
+def reset_prompt() -> PromptResponse:
+    """시스템 프롬프트를 기본값(DEFAULT_PROMPT)으로 복원."""
+    now = datetime.now().isoformat()
+    conn = get_connection()
+    try:
+        conn.execute(
+            "UPDATE system_prompt SET prompt_text=?, updated_at=? "
+            "WHERE id=(SELECT id FROM system_prompt ORDER BY id DESC LIMIT 1)",
+            (DEFAULT_PROMPT, now),
+        )
+        if conn.total_changes == 0:
+            conn.execute(
+                "INSERT INTO system_prompt(prompt_text, updated_at) VALUES (?, ?)",
+                (DEFAULT_PROMPT, now),
+            )
+        conn.commit()
+        return PromptResponse(prompt_text=DEFAULT_PROMPT, updated_at=now)
+    finally:
+        conn.close()
 
 
 @router.put("/prompt", response_model=PromptResponse)

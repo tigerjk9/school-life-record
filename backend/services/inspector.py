@@ -224,9 +224,18 @@ async def _run(
     # inspections.total_records 갱신
     await asyncio.to_thread(_update_total_records, inspection_id, total)
 
+    def _eta(proc: int) -> Optional[float]:
+        """남은 시간(초) 예측. 아직 처리된 게 없으면 None."""
+        if proc <= 0:
+            return None
+        elapsed = time.time() - started
+        avg = elapsed / proc
+        remaining = max(0, total - proc)
+        return round(avg * remaining, 1)
+
     try:
         if total == 0:
-            await _push(queue, "progress", {"processed": 0, "total": 0})
+            await _push(queue, "progress", {"processed": 0, "total": 0, "eta_sec": None})
         for batch_start in range(0, total, batch_size):
             if cancel.is_set():
                 logger.info("[inspector] 점검 %s 취소 요청 감지", inspection_id)
@@ -238,6 +247,7 @@ async def _run(
                 "total": total,
                 "current_student": f"{current['grade']}-{current['class_no']}-{current['number']} {current['student_name']}",
                 "current_area": current["area"],
+                "eta_sec": _eta(processed),
             })
 
             try:
@@ -350,6 +360,7 @@ async def _run(
             await _push(queue, "progress", {
                 "processed": processed,
                 "total": total,
+                "eta_sec": _eta(processed),
             })
 
         # 종료

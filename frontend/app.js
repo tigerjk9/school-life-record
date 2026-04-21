@@ -13,6 +13,7 @@ const API = {
   SEARCH: '/api/search',
   GEMINI_CONNECT: '/api/gemini/connect',
   PROMPT: '/api/prompt',
+  PROMPT_RESET: '/api/prompt/reset',
   INSPECT_START: '/api/inspect/start',
   INSPECT_STREAM: (id) => `/api/inspect/stream/${id}`,
   INSPECT_CANCEL: (id) => `/api/inspect/cancel/${id}`,
@@ -88,6 +89,18 @@ function truncate(s, n = 80) {
   if (!s) return '';
   const t = String(s).replace(/\s+/g, ' ').trim();
   return t.length > n ? t.slice(0, n) + '…' : t;
+}
+
+function formatDuration(seconds) {
+  if (seconds === null || seconds === undefined || isNaN(seconds)) return '-';
+  const s = Math.max(0, Math.round(seconds));
+  if (s < 60) return `${s}초`;
+  const m = Math.floor(s / 60);
+  const rem = s % 60;
+  if (m < 60) return rem > 0 ? `${m}분 ${rem}초` : `${m}분`;
+  const h = Math.floor(m / 60);
+  const mm = m % 60;
+  return mm > 0 ? `${h}시간 ${mm}분` : `${h}시간`;
 }
 
 /* -------------------- 토스트 -------------------- */
@@ -750,6 +763,18 @@ async function loadPrompt() {
   }
 }
 
+async function resetPrompt() {
+  if (!confirm('프롬프트를 기본값으로 복원합니다. 현재 편집 중인 내용은 사라집니다. 계속하시겠습니까?')) return;
+  try {
+    const res = await api('POST', API.PROMPT_RESET);
+    $('#prompt-textarea').value = res.prompt_text || '';
+    $('#prompt-updated').textContent = res.updated_at ? `갱신: ${formatDateTime(res.updated_at)}` : '';
+    showToast('프롬프트를 기본값으로 복원했습니다.', 'success');
+  } catch (e) {
+    showToast(e.message || '복원 실패', 'error');
+  }
+}
+
 async function savePrompt() {
   const text = $('#prompt-textarea').value;
   if (!text.trim()) {
@@ -850,9 +875,16 @@ function openInspectionStream(inspectionId) {
     try {
       const d = JSON.parse(ev.data);
       setProgress(d.processed, d.total);
+      const parts = [];
       if (d.current_student) {
         const areaShort = d.current_area && AREA_BY_KEY[d.current_area] ? AREA_BY_KEY[d.current_area].short : (d.current_area || '');
-        $('#progress-current').textContent = `현재: ${d.current_student}${areaShort ? ` · ${areaShort}` : ''}`;
+        parts.push(`현재: ${d.current_student}${areaShort ? ` · ${areaShort}` : ''}`);
+      }
+      if (d.eta_sec !== null && d.eta_sec !== undefined && d.processed < d.total) {
+        parts.push(`남은 시간: 약 ${formatDuration(d.eta_sec)}`);
+      }
+      if (parts.length) {
+        $('#progress-current').textContent = parts.join(' · ');
       }
     } catch {}
   });
@@ -1216,6 +1248,7 @@ function bindEvents() {
   });
   $('#btn-prompt-save').addEventListener('click', savePrompt);
   $('#btn-prompt-reload').addEventListener('click', loadPrompt);
+  $('#btn-prompt-reset').addEventListener('click', resetPrompt);
   $('#btn-inspect-start').addEventListener('click', startInspection);
   $('#btn-inspect-cancel').addEventListener('click', cancelInspection);
 

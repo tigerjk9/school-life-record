@@ -141,6 +141,7 @@ class ProgressEvent(BaseModel):
     total: int
     current_student: Optional[str] = None
     current_area: Optional[str] = None
+    eta_sec: Optional[float] = None
 
 
 class ResultEvent(BaseModel):

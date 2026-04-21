@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>생활기록부 점검</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <script>
     (function(){
       var t = localStorage.getItem('theme');
@@ -220,6 +220,7 @@
             <div class="prompt-actions">
               <button id="btn-prompt-save" class="btn btn-secondary btn-sm">프롬프트 저장</button>
               <button id="btn-prompt-reload" class="btn btn-secondary btn-sm">다시 불러오기</button>
+              <button id="btn-prompt-reset" class="btn btn-secondary btn-sm" title="기본 프롬프트로 되돌립니다">기본값 복원</button>
             </div>
           </div>
         </div>
@@ -591,6 +592,6 @@
   <!-- 토스트 -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
