@@ -48,7 +48,8 @@ def _fetch_targets(
             elif area == "creative_activities":
                 cols = "r.id, r.student_id, r.area AS subject, r.content"
             elif area == "volunteer_activities":
-                cols = "r.id, r.student_id, r.organization AS subject, COALESCE(r.content,'') AS content"
+                # organization과 content 모두 가져옴 (content 없어도 기관명으로 점검)
+                cols = "r.id, r.student_id, r.organization, COALESCE(r.content,'') AS content"
             elif area == "behavior_opinion":
                 cols = "r.id, r.student_id, NULL AS subject, r.content"
             else:
@@ -73,20 +74,45 @@ def _fetch_targets(
             sql += "ORDER BY s.grade, s.class_no, s.number, r.id"
 
             for row in conn.execute(sql, params).fetchall():
-                content = row["content"]
-                if not content or not str(content).strip():
-                    continue
-                out.append({
-                    "record_id": row["id"],
-                    "student_id": row["student_id"],
-                    "student_name": row["name"],
-                    "grade": row["grade"],
-                    "class_no": row["class_no"],
-                    "number": row["number"],
-                    "area": area,
-                    "subject": row["subject"],
-                    "content": content,
-                })
+                if area == "volunteer_activities":
+                    org = str(row["organization"] or "").strip()
+                    raw = str(row["content"] or "").strip()
+                    # 기관명 또는 활동내용 중 하나라도 있으면 점검 대상
+                    if not org and not raw:
+                        continue
+                    # Gemini에게 기관명과 내용을 모두 제공
+                    parts = []
+                    if org:
+                        parts.append(f"기관명: {org}")
+                    if raw:
+                        parts.append(raw)
+                    effective_content = "\n".join(parts)
+                    out.append({
+                        "record_id": row["id"],
+                        "student_id": row["student_id"],
+                        "student_name": row["name"],
+                        "grade": row["grade"],
+                        "class_no": row["class_no"],
+                        "number": row["number"],
+                        "area": area,
+                        "subject": org or None,
+                        "content": effective_content,
+                    })
+                else:
+                    content = row["content"]
+                    if not content or not str(content).strip():
+                        continue
+                    out.append({
+                        "record_id": row["id"],
+                        "student_id": row["student_id"],
+                        "student_name": row["name"],
+                        "grade": row["grade"],
+                        "class_no": row["class_no"],
+                        "number": row["number"],
+                        "area": area,
+                        "subject": row.get("subject"),
+                        "content": content,
+                    })
     finally:
         conn.close()
     return out

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>생활기록부 점검</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="style.css?v=4">
+  <link rel="stylesheet" href="style.css?v=5">
   <script>
     (function(){
       var t = localStorage.getItem('theme');
@@ -164,8 +164,8 @@
           </div>
           <div class="config-field">
             <label for="batch-size">배치 크기</label>
-            <input id="batch-size" type="number" min="1" max="5" value="3">
-            <small class="field-hint">1~5건씩 묶어 호출합니다 (기본 3).</small>
+            <input id="batch-size" type="number" min="1" max="10" value="3">
+            <small class="field-hint">1~10건씩 묶어 호출합니다 (기본 3). 오류 잦으면 1로 낮추세요.</small>
           </div>
         </div>
 
@@ -591,6 +591,6 @@
   <!-- 토스트 -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-  <script src="app.js?v=4"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>

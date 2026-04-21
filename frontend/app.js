@@ -801,7 +801,7 @@ async function startInspection() {
   const body = {
     areas,
     model,
-    batch_size: Math.min(Math.max(batch, 1), 5),
+    batch_size: Math.min(Math.max(batch, 1), 10),
     grade,
     class_no: classNo,
   };
