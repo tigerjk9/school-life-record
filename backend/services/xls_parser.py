@@ -19,11 +19,16 @@ logger = logging.getLogger(__name__)
 
 # 표준 키 -> 후보 컬럼명 (정규화 후 매칭)
 COLUMN_MAPS: dict[str, list[str]] = {
-    "grade": ["학년"],
+    # NICE XLS에서 '학년' 컬럼은 '기록학년(record_grade)'을 의미한다.
+    # 현재 학년(current_grade)은 파일 상단 헤더 셀(예: "1학년 3반")에서 추출.
+    "grade_year": ["학년", "학년도", "기록학년"],
+    # 현재 학년(current_grade)은 _extract_class_info로 fallback 처리되므로
+    # 컬럼 매핑 시 grade는 grade_year와 동일하게 처리한다.
+    "grade": ["학년", "학년도"],
     "class_no": ["반"],
     "number": ["번호", "번"],
     "name": ["성명", "이름"],
-    "subject": ["과목명", "과목", "교과"],
+    "subject": ["과목명", "과목"],
     "curriculum": ["교과"],
     "original_score": ["원점수"],
     "achievement": ["성취도"],
@@ -40,9 +45,8 @@ COLUMN_MAPS: dict[str, list[str]] = {
     ],
     "area": ["영역", "활동영역"],
     "hours": ["시간", "이수시간", "활동시간"],
-    "organization": ["기관명", "봉사기관명", "장소", "주관기관"],
+    "organization": ["기관명", "봉사기관명", "장소", "주관기관명"],
     "date": ["날짜", "봉사일", "일자", "기간"],
-    "grade_year": ["학년"],
 }
 
 
@@ -64,31 +68,73 @@ def _norm(s: Any) -> str:
     return text
 
 
-def read_with_header_autodetect(path: str | Path, sheet: int | str = 0) -> pd.DataFrame:
-    """헤더 행을 자동 탐지하여 DataFrame 반환.
+def _extract_class_info(raw: pd.DataFrame) -> tuple[Optional[int], Optional[int]]:
+    """NICE XLS 헤더 셀(예: '1학년 3반 교과학습발달상황')에서 현재 학년/반 추출.
 
-    상위 10행을 스캔하여 ('학년','반','번호','성명') 중 2개 이상이
-    포함된 첫 행을 헤더로 간주한다.
+    NICE 출력 파일은 데이터 행에 '반' 컬럼이 없고, 파일 상단(보통 2~4행)
+    첫 번째 셀에 'X학년 Y반' 패턴으로 현재 반 정보가 기입된다.
+    이 함수는 그 패턴을 찾아 (current_grade, current_class)를 반환한다.
+    """
+    scan_limit = min(6, len(raw))
+    for i in range(scan_limit):
+        col_limit = min(5, len(raw.columns))
+        for j in range(col_limit):
+            val = raw.iloc[i, j]
+            if val is None:
+                continue
+            try:
+                if isinstance(val, float) and pd.isna(val):
+                    continue
+            except Exception:
+                pass
+            cell_str = str(val).strip()
+            m = re.search(r'(\d+)\s*학년\s*(\d+)\s*반', cell_str)
+            if m:
+                return int(m.group(1)), int(m.group(2))
+    return None, None
+
+
+def read_with_header_autodetect(
+    path: str | Path,
+    sheet: int | str = 0,
+) -> tuple[pd.DataFrame, Optional[int], Optional[int]]:
+    """헤더 행을 자동 탐지하여 DataFrame + (current_grade, current_class) 반환.
+
+    NICE 학생부 XLS는 데이터 행에 '반' 컬럼이 없고 파일 상단 셀에
+    'X학년 Y반' 형태로 반 정보가 있다. 이를 먼저 추출한 뒤,
+    실제 컬럼 헤더 행을 탐지한다.
+
+    헤더 탐지 규칙:
+    - 셀 텍스트가 needle 단어와 '근접' 일치(len <= needle*2+2)하는 셀이 2개 이상인 행
+    - 이 조건은 '1학년3반교과학습발달상황' 같은 복합 셀이 오탐지되는 것을 방지한다.
     """
     engine = detect_engine(path)
     raw = pd.read_excel(path, header=None, engine=engine, sheet_name=sheet, dtype=object)
+
+    current_grade, current_class = _extract_class_info(raw)
+
     header_row: Optional[int] = None
-    needles = {"학년", "반", "번호", "성명", "이름", "번"}
+    needles = {"학년", "반", "번호", "성명", "이름", "번", "학년도"}
     scan_limit = min(10, len(raw))
     for i in range(scan_limit):
         cells = [_norm(v) for v in raw.iloc[i].tolist()]
-        hits = sum(1 for c in cells for n in needles if n in c)
-        if hits >= 2:
+        # 셀 길이가 needle의 2배+2 이하인 경우만 헤더 셀로 인정
+        # → '1학년3반교과학습발달상황'(15자) 같은 복합 셀 오탐지 방지
+        header_cells = sum(
+            1 for c in cells
+            if c and any(n in c and len(c) <= len(n) * 2 + 2 for n in needles)
+        )
+        if header_cells >= 2:
             header_row = i
             break
+
     if header_row is None:
-        # 마지막 시도: 첫 행을 헤더로 본다.
         header_row = 0
         logger.warning("[xls_parser] 헤더 자동탐지 실패 → 첫 행을 헤더로 간주: %s", path)
 
     df = pd.read_excel(path, header=header_row, engine=engine, sheet_name=sheet, dtype=object)
     df.columns = [str(c) for c in df.columns]
-    return df
+    return df, current_grade, current_class
 
 
 def normalize_columns(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, str], list[str]]:
@@ -181,9 +227,13 @@ def _to_str(v: Any) -> Optional[str]:
     return s
 
 
-def _student_key(row: dict[str, Any]) -> Optional[tuple[int, int, int, str]]:
-    g = _to_int(row.get("grade"))
-    c = _to_int(row.get("class_no"))
+def _student_key(
+    row: dict[str, Any],
+    fallback_grade: Optional[int] = None,
+    fallback_class: Optional[int] = None,
+) -> Optional[tuple[int, int, int, str]]:
+    g = _to_int(row.get("grade")) or fallback_grade
+    c = _to_int(row.get("class_no")) or fallback_class
     n = _to_int(row.get("number"))
     name = _to_str(row.get("name"))
     if g is None or c is None or n is None or not name:
@@ -205,18 +255,26 @@ def _parse_generic(
     area: str,
     extra_keys: tuple[str, ...] = (),
 ) -> dict[str, Any]:
-    """공통 파싱: header 자동탐지 → 정규화 → 행별 dict 변환."""
-    df = read_with_header_autodetect(path)
+    """공통 파싱: header 자동탐지 → 정규화 → 행별 dict 변환.
+
+    NICE XLS는 데이터 행에 '반' 컬럼이 없는 경우가 많다.
+    파일 상단 셀에서 추출한 (current_grade, current_class)를 fallback으로 사용.
+    """
+    df, current_grade, current_class = read_with_header_autodetect(path)
     df, mapping, unmatched = normalize_columns(df)
     if unmatched:
         logger.info("[xls_parser:%s] 미매칭 컬럼: %s", area, unmatched)
 
+    if current_grade or current_class:
+        logger.info("[xls_parser:%s] 파일 헤더 셀에서 현재 학년/반 추출: %s학년 %s반", area, current_grade, current_class)
+
     warnings: list[str] = []
-    required_keys = ("grade", "class_no", "number", "name")
+    # class_no는 NICE XLS 파일 헤더 셀에서 fallback으로 채울 수 있으므로 필수 아님
+    required_keys = ("number", "name")
     missing_required = [k for k in required_keys if k not in mapping]
     if missing_required:
         msg = (
-            f"[{area}] 필수 컬럼(학년/반/번호/이름) 매핑 실패: missing={missing_required}. "
+            f"[{area}] 필수 컬럼(번호/이름) 매핑 실패: missing={missing_required}. "
             "헤더 자동 탐지 결과를 확인하세요."
         )
         logger.warning(msg)
@@ -225,7 +283,7 @@ def _parse_generic(
     rows: list[dict[str, Any]] = []
     skipped = 0
     for raw in _iter_rows(df):
-        key = _student_key(raw)
+        key = _student_key(raw, fallback_grade=current_grade, fallback_class=current_class)
         if key is None:
             skipped += 1
             continue

@@ -61,12 +61,15 @@ async def inspect_batch(
     records_text = "\n\n".join(records_text_parts)
 
     user_prompt = (
-        f"다음 {len(records)}개 기록을 검토하고 JSON 배열로만 응답하세요. "
-        f"각 항목은 record_id, violation(true/false), category, reason, evidence 키를 가집니다.\n\n"
+        f"다음 {len(records)}개 기록을 검토하고 JSON 배열로만 응답하세요.\n"
+        f"각 항목은 record_id, violation(true/false), category, reason, evidence, suggested_text 키를 가집니다.\n"
+        f"- evidence: 위반으로 판단된 원문 발췌 (없으면 null)\n"
+        f"- suggested_text: 위반 부분의 수정 제안 문장 (없으면 null)\n\n"
         f"{records_text}\n\n"
         '응답 형식 예시:\n'
         '[{"record_id": 1, "violation": true, "category": "기관명 명시", '
-        '"reason": "특정 기업명 직접 기재", "evidence": "...삼성전자..."}]'
+        '"reason": "특정 기업명 직접 기재", "evidence": "...삼성전자...", '
+        '"suggested_text": "특정 기업과 협력하여 프로젝트를 진행함"}]'
     )
 
     last_err: Exception | None = None

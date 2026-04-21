@@ -141,8 +141,8 @@ def _insert_batch_results(rows: list[tuple]) -> None:
         conn.executemany(
             """INSERT INTO inspection_results
             (inspection_id, student_id, area, record_id,
-             violation, category, reason, evidence, processed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+             violation, category, reason, evidence, suggested_text, processed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             rows,
         )
         conn.commit()
@@ -257,6 +257,7 @@ async def _run(
                         "검토오류",
                         "Gemini 응답에서 해당 항목 누락",
                         None,
+                        None,
                         now_iso,
                     ))
                     result_events.append({
@@ -271,6 +272,7 @@ async def _run(
                         "category": "검토오류",
                         "reason": "Gemini 응답에서 해당 항목 누락",
                         "evidence": None,
+                        "suggested_text": None,
                     })
                     continue
 
@@ -279,6 +281,7 @@ async def _run(
                 category = res.get("category")
                 reason = res.get("reason")
                 evidence = res.get("evidence")
+                suggested_text = res.get("suggested_text")
                 rows_to_insert.append((
                     inspection_id,
                     item["student_id"],
@@ -288,6 +291,7 @@ async def _run(
                     category,
                     reason,
                     evidence,
+                    suggested_text,
                     now_iso,
                 ))
                 if is_violation:
@@ -306,6 +310,7 @@ async def _run(
                     "category": category,
                     "reason": reason,
                     "evidence": evidence,
+                    "suggested_text": suggested_text,
                 })
 
             # DB 저장 (동기 SQLite 작업은 스레드로)

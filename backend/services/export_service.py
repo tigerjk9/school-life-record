@@ -19,7 +19,8 @@ COLUMNS = [
     ("위반", "violation_label"),
     ("카테고리", "category"),
     ("사유", "reason"),
-    ("근거", "evidence"),
+    ("근거(위반 발췌)", "evidence"),
+    ("수정 제안", "suggested_text"),
     ("처리시각", "processed_at"),
 ]
 
@@ -58,7 +59,7 @@ def _write_table(ws, rows: Iterable[dict[str, Any]], formats: dict[str, Any]) ->
     for col, name in enumerate(headers):
         ws.write(0, col, name, formats["header"])
 
-    widths = [6, 6, 6, 12, 18, 8, 18, 40, 40, 20]
+    widths = [6, 6, 6, 12, 18, 8, 18, 40, 40, 40, 20]
     for col, w in enumerate(widths):
         ws.set_column(col, col, w)
 

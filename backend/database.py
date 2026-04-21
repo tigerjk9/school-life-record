@@ -44,6 +44,11 @@ def init_db() -> None:
     conn = get_connection()
     try:
         conn.executescript(schema_sql)
+        # 마이그레이션: suggested_text 컬럼이 없는 이전 DB 대응
+        cols = [r[1] for r in conn.execute("PRAGMA table_info(inspection_results)").fetchall()]
+        if "suggested_text" not in cols:
+            conn.execute("ALTER TABLE inspection_results ADD COLUMN suggested_text TEXT")
+            conn.commit()
         row = conn.execute("SELECT 1 FROM system_prompt LIMIT 1").fetchone()
         if not row:
             conn.execute(

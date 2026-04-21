@@ -717,15 +717,18 @@ function populateModelSelect() {
     return;
   }
   sel.disabled = false;
-  const preferred = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite'];
+  // Gemini API는 "models/gemini-2.5-flash-..." 형태로 반환하므로 부분 문자열로 비교
+  const preferredKeywords = ['gemini-2.5-flash-preview', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+  const isPreferred = (m) => preferredKeywords.some(kw => m.includes(kw));
   const ordered = [
-    ...preferred.filter(m => state.availableModels.includes(m)),
-    ...state.availableModels.filter(m => !preferred.includes(m)),
+    ...state.availableModels.filter(m => isPreferred(m)),
+    ...state.availableModels.filter(m => !isPreferred(m)),
   ];
   ordered.forEach((m, i) => {
     const opt = document.createElement('option');
     opt.value = m;
-    opt.textContent = m;
+    // "models/" prefix 제거해 표시
+    opt.textContent = m.replace(/^models\//, '');
     if (i === 0) opt.selected = true;
     sel.appendChild(opt);
   });
@@ -1103,6 +1106,12 @@ function openResultDetailModal(r) {
   const areaShort = AREA_BY_KEY[r.area] ? AREA_BY_KEY[r.area].short : r.area;
   const title = `${r.grade}-${r.class_no}-${r.number} ${r.student_name || ''} · ${areaShort}`;
   const wrapper = document.createElement('div');
+  const suggestedBlock = r.suggested_text
+    ? `<div class="detail-block">
+        <h4>수정 제안</h4>
+        <div class="detail-content detail-suggested">${escapeHtml(r.suggested_text)}</div>
+      </div>`
+    : '';
   wrapper.innerHTML = `
     <div class="detail-block">
       <h4>판정</h4>
@@ -1114,9 +1123,10 @@ function openResultDetailModal(r) {
       <div class="detail-content">${escapeHtml(r.reason || '(없음)')}</div>
     </div>
     <div class="detail-block">
-      <h4>본문 발췌 (근거)</h4>
+      <h4>위반 발췌</h4>
       <div class="detail-content">${escapeHtml(r.evidence || '(없음)')}</div>
     </div>
+    ${suggestedBlock}
     ${r.processed_at ? `<div class="detail-meta">처리 시각: ${formatDateTime(r.processed_at)}</div>` : ''}
   `;
   openModal(title, wrapper);

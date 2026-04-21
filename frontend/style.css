@@ -978,6 +978,18 @@ select option { background: var(--surface); color: var(--text-1); }
   white-space: pre-wrap;
   line-height: var(--lh-base);
 }
+.detail-block .detail-suggested {
+  background: var(--success-bg, #f0fdf4);
+  border-left: 3px solid var(--success, #22c55e);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  color: var(--success-text, #15803d);
+}
+[data-theme="dark"] .detail-block .detail-suggested {
+  background: #052e16;
+  border-left-color: #22c55e;
+  color: #86efac;
+}
 .detail-meta {
   font-size: var(--text-xs);
   color: var(--text-3);

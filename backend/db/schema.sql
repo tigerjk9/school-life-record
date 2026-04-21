@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS inspection_results (
     category        TEXT,
     reason          TEXT,
     evidence        TEXT,
+    suggested_text  TEXT,
     processed_at    TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_results_inspection ON inspection_results(inspection_id);

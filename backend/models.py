@@ -130,6 +130,7 @@ class ResultRow(BaseModel):
     category: Optional[str] = None
     reason: Optional[str] = None
     evidence: Optional[str] = None
+    suggested_text: Optional[str] = None
     processed_at: Optional[str] = None
 
 
@@ -154,6 +155,7 @@ class ResultEvent(BaseModel):
     category: Optional[str] = None
     reason: Optional[str] = None
     evidence: Optional[str] = None
+    suggested_text: Optional[str] = None
 
 
 class DoneEvent(BaseModel):

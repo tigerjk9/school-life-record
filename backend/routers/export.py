@@ -25,7 +25,7 @@ def list_results(
 ) -> list[ResultRow]:
     sql = (
         "SELECT r.id, r.inspection_id, r.student_id, r.area, r.record_id, "
-        "r.violation, r.category, r.reason, r.evidence, r.processed_at, "
+        "r.violation, r.category, r.reason, r.evidence, r.suggested_text, r.processed_at, "
         "s.grade, s.class_no, s.number, s.name AS student_name "
         "FROM inspection_results r JOIN students s ON s.id = r.student_id "
         "WHERE r.inspection_id = ?"
@@ -55,6 +55,7 @@ def list_results(
                 category=r["category"],
                 reason=r["reason"],
                 evidence=r["evidence"],
+                suggested_text=r["suggested_text"],
                 processed_at=r["processed_at"],
             )
             for r in rows
