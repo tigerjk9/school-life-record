@@ -2,40 +2,73 @@
 
 ## 프로젝트 개요
 
-생활기록부 점검 데스크톱 프로그램(생기부_DB_생성기.exe + 생기부_AI_Inspector.exe)을
-웹 서비스로 재구현한 프로젝트. **구현 완료 상태**.
+원본 데스크톱 exe 2종(`생기부_DB_생성기.exe` + `생기부_AI_Inspector(v1.1).exe`)의 기능을 모두 반영하고 웹 환경의 편의 기능을 추가한 재구현 프로젝트. **구현 완료 상태** (v1.2, 2026-04-21).
 
-**원본 프로그램 제작:** 대전복수고등학교 박영준 교사  
-**기술 스택:** Python FastAPI + SQLite + Google Gemini API + Vanilla JS  
-**GitHub:** https://github.com/tigerjk9/school-life-record  
+**원본 프로그램 제작:** 대전복수고등학교 박영준 교사
+**기술 스택:** Python FastAPI + SQLite + Google Gemini API + Vanilla JS
+**GitHub:** https://github.com/tigerjk9/school-life-record
 **실행:** `생기부점검_실행.bat` 더블클릭 → `http://127.0.0.1:8000`
+**PRD:** `docs/PRD.md`
 
-## 구현 완료 기능
+## 원본 exe 대비 반영 매트릭스
 
-- NICE XLS 5종 업로드 & SQLite DB 구축 (`생기부점검_실행.bat`)
-- 학생 조회 (학년/반/이름/본문 키워드 검색)
-- Gemini AI 일괄 점검 (SSE 실시간 스트리밍)
-- 결과 확인 및 Excel 내보내기 (4시트)
-- 다크/라이트 모드 전환
-- 사용 안내 탭 (설치·NICE 파일 받기·탭별 사용법·FAQ)
+### 원본에서 가져온 기능 (동등 or 개선)
+
+- 세특/창체/봉사/행특 **4개 영역** AI 점검
+- 위반 근거(evidence, Before) + **수정 제안(suggested_text, After)**
+- 학년/반/학생 단위 필터 점검
+- 배치 크기 조정, API 키 검증 + 모델 자동 로드
+- **남은 시간 예상 표시** (ETA)
+- 결과 Excel 내보내기 (원본 1시트 → 4시트로 개선)
+- 상세 모달 비교 뷰
+
+### 웹에서 추가한 기능
+
+- 학생 조회 + 본문 키워드 **전문 검색**
+- **검사 이력 DB 관리** (여러 차수 비교)
+- **다크/라이트 모드**
+- DB 자동 백업 (`record.db.bak.{timestamp}`)
+- 프롬프트 웹 UI 편집 + **기본값 복원** 버튼
+- 5개 탭 UI (업로드/조회/점검/결과/안내)
+
+### 해결된 핵심 버그
+
+- B-001: NICE XLS 헤더 셀(`"1학년 3반 교과학습발달상황"`) 오감지 → 복합 셀 길이 조건 추가
+- B-002: NICE XLS 데이터 행에 "반" 컬럼이 없어 모든 학생 스킵 → `_extract_class_info` fallback
+- B-003: 봉사 content 없으면 기관명이 있어도 스킵 → organization 기반 점검 로직 추가
 
 ## 작업 시 참고
 
 - 프론트엔드 3파일: `frontend/index.html`, `frontend/style.css`, `frontend/app.js`
 - 백엔드 진입점: `backend/main.py` (FastAPI + StaticFiles mount)
 - DB 스키마: `backend/db/schema.sql`
-- CSS 캐시 무효화: `style.css?v=3`, `app.js?v=3` (변경 시 버전 번호 올릴 것)
+- CSS 캐시 무효화: 현재 `?v=6` — 프론트 변경 시 버전 번호 올릴 것 (`index.html`의 2개 위치)
 - 테마: `[data-theme="dark"]` 속성을 `<html>`에 설정, `localStorage`로 저장
+- DEFAULT_PROMPT 변경 시: `backend/database.py` 수정 → 기존 사용자는 **기본값 복원** 버튼으로 반영
+- Gemini 응답 필드 변경 시: `gemini_service.py` 프롬프트 + `inspector.py` 저장 로직 + `models.py` 동시 수정
+
+## 자주 쓰는 디렉토리
+
+```
+backend/services/xls_parser.py   — NICE XLS 파서 (헤더 자동 탐지 + 학년/반 추출)
+backend/services/inspector.py    — 점검 오케스트레이션 + SSE + ETA 계산
+backend/services/gemini_service.py — Gemini 배치 호출 (재시도)
+backend/services/export_service.py — Excel 4시트 생성
+backend/database.py              — DB 연결 + DEFAULT_PROMPT
+backend/routers/inspect.py       — 프롬프트 GET/PUT/RESET + 점검 API
+frontend/app.js                  — 단일 페이지 앱 (5탭)
+docs/PRD.md                      — 제품 요구사항 문서
+```
 
 ## 하네스
 
-**목표:** NICE XLS 업로드 → DB 구축 → Gemini AI 점검 → 결과 Excel 내보내기를 웹으로 제공
+**목표:** NICE XLS 업로드 → DB 구축 → Gemini AI 점검(4영역) → 결과 Excel 내보내기를 웹으로 제공
 
-**트리거:** 추가 기능 개발·버그 수정·디자인 변경 요청 시 `school-record-web` 오케스트레이터 스킬 참고. 단순 질문·소규모 수정은 직접 응답 가능.
+**트리거:** 추가 기능 개발·버그 수정·디자인 변경 요청 시 직접 처리. 원본 exe 동작과 충돌 의심 시 `_extracted/` 디렉토리의 pyc 바이트코드를 참고.
 
 **변경 이력:**
-| 날짜 | 변경 내용 | 대상 | 사유 |
-|------|----------|------|------|
-| 2026-04-20 | 초기 구성 | 전체 | 하네스 최초 구축 |
-| 2026-04-20 | frontend-design 스킬 필수 적용 추가 | frontend 전체 | 디자인 품질 개선 |
-| 2026-04-20 | 전체 구현 완료 & GitHub 배포 | 전체 | MVP 완성 |
+| 날짜 | 버전 | 변경 내용 | 사유 |
+|------|------|----------|------|
+| 2026-04-20 | 1.0 | 초기 구현 완료 & GitHub 배포 | MVP 완성 |
+| 2026-04-21 | 1.1 | NICE XLS 파싱 버그(B-001/B-002) 수정 + suggested_text 전 스택 반영 | 원본 실행기와 비교 분석 결과 |
+| 2026-04-21 | 1.2 | 봉사 점검 누락(B-003) 수정 + ETA 표시 + 프롬프트 기본값 복원 | 원본 AI Inspector 바이트코드 분석 |
