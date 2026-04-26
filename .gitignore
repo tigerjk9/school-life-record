@@ -23,3 +23,9 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+
+# Claude Code / oh-my-claudecode 런타임 (포크 시 불필요)
+.omc/
+docs/.pdca-snapshots/
+docs/.pdca-status.json
+verify_*.py
