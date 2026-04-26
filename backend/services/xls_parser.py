@@ -1,7 +1,7 @@
-"""NICE 학생부 XLS/XLSX 파서.
+"""NEIS 학생부 XLS/XLSX 파서.
 
 각 영역(교과성적/세특/창체/봉사/행특)별로 파일을 읽어 표준화된
-dict 리스트를 반환한다. NICE 의 실제 컬럼명은 파일 버전에 따라 다를
+dict 리스트를 반환한다. NEIS 의 실제 컬럼명은 파일 버전에 따라 다를
 수 있으므로 후보 컬럼명 리스트와 매칭하여 정규화한다.
 """
 from __future__ import annotations
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 # 표준 키 -> 후보 컬럼명 (정규화 후 매칭)
 COLUMN_MAPS: dict[str, list[str]] = {
-    # NICE XLS에서 '학년' 컬럼은 '기록학년(record_grade)'을 의미한다.
+    # NEIS XLS에서 '학년' 컬럼은 '기록학년(record_grade)'을 의미한다.
     # 현재 학년(current_grade)은 파일 상단 헤더 셀(예: "1학년 3반")에서 추출.
     "grade_year": ["학년", "학년도", "기록학년"],
     # 현재 학년(current_grade)은 _extract_class_info로 fallback 처리되므로
@@ -70,9 +70,9 @@ def _norm(s: Any) -> str:
 
 
 def _extract_class_info(raw: pd.DataFrame) -> tuple[Optional[int], Optional[int]]:
-    """NICE XLS 헤더 셀(예: '1학년 3반 교과학습발달상황')에서 현재 학년/반 추출.
+    """NEIS XLS 헤더 셀(예: '1학년 3반 교과학습발달상황')에서 현재 학년/반 추출.
 
-    NICE 출력 파일은 데이터 행에 '반' 컬럼이 없고, 파일 상단(보통 2~4행)
+    NEIS 출력 파일은 데이터 행에 '반' 컬럼이 없고, 파일 상단(보통 2~4행)
     첫 번째 셀에 'X학년 Y반' 패턴으로 현재 반 정보가 기입된다.
     이 함수는 그 패턴을 찾아 (current_grade, current_class)를 반환한다.
     """
@@ -101,7 +101,7 @@ def read_with_header_autodetect(
 ) -> tuple[pd.DataFrame, Optional[int], Optional[int]]:
     """헤더 행을 자동 탐지하여 DataFrame + (current_grade, current_class) 반환.
 
-    NICE 학생부 XLS는 데이터 행에 '반' 컬럼이 없고 파일 상단 셀에
+    NEIS 학생부 XLS는 데이터 행에 '반' 컬럼이 없고 파일 상단 셀에
     'X학년 Y반' 형태로 반 정보가 있다. 이를 먼저 추출한 뒤,
     실제 컬럼 헤더 행을 탐지한다.
 
@@ -258,7 +258,7 @@ def _parse_generic(
 ) -> dict[str, Any]:
     """공통 파싱: header 자동탐지 → 정규화 → 행별 dict 변환.
 
-    NICE XLS는 데이터 행에 '반' 컬럼이 없는 경우가 많다.
+    NEIS XLS는 데이터 행에 '반' 컬럼이 없는 경우가 많다.
     파일 상단 셀에서 추출한 (current_grade, current_class)를 fallback으로 사용.
     """
     df, current_grade, current_class = read_with_header_autodetect(path)
@@ -270,7 +270,7 @@ def _parse_generic(
         logger.info("[xls_parser:%s] 파일 헤더 셀에서 현재 학년/반 추출: %s학년 %s반", area, current_grade, current_class)
 
     warnings: list[str] = []
-    # class_no는 NICE XLS 파일 헤더 셀에서 fallback으로 채울 수 있으므로 필수 아님
+    # class_no는 NEIS XLS 파일 헤더 셀에서 fallback으로 채울 수 있으므로 필수 아님
     required_keys = ("number", "name")
     missing_required = [k for k in required_keys if k not in mapping]
     if missing_required:

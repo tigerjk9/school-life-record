@@ -1,4 +1,4 @@
-"""파싱된 NICE XLS 데이터를 SQLite 로 적재."""
+"""파싱된 NEIS XLS 데이터를 SQLite 로 적재."""
 from __future__ import annotations
 
 import logging
