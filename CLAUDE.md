@@ -43,7 +43,7 @@
 - 프론트엔드 3파일: `frontend/index.html`, `frontend/style.css`, `frontend/app.js`
 - 백엔드 진입점: `backend/main.py` (FastAPI + StaticFiles mount)
 - DB 스키마: `backend/db/schema.sql`
-- CSS 캐시 무효화: 현재 `?v=8` — 프론트 변경 시 버전 번호 올릴 것 (`index.html`의 2개 위치)
+- CSS 캐시 무효화: 현재 `?v=9` — 프론트 변경 시 버전 번호 올릴 것 (`index.html`의 2개 위치)
 - 테마: `[data-theme="dark"]` 속성을 `<html>`에 설정, `localStorage`로 저장
 - DEFAULT_PROMPT 변경 시: `backend/database.py` 수정 → 기존 사용자는 **기본값 복원** 버튼으로 반영
 - Gemini 응답 필드 변경 시: `gemini_service.py` 프롬프트 + `inspector.py` 저장 로직 + `models.py` 동시 수정
@@ -73,3 +73,4 @@ docs/PRD.md                      — 제품 요구사항 문서
 | 2026-04-20 | 1.0 | 초기 구현 완료 & GitHub 배포 | MVP 완성 |
 | 2026-04-21 | 1.1 | NICE XLS 파싱 버그(B-001/B-002) 수정 + suggested_text 전 스택 반영 | 원본 실행기와 비교 분석 결과 |
 | 2026-04-21 | 1.2 | 봉사 점검 누락(B-003) 수정 + ETA 표시 + 프롬프트 기본값 복원 | 원본 AI Inspector 바이트코드 분석 |
+| 2026-04-26 | 1.3 | 레드팀 감사: DB 중복 적재·Excel 필터 버그 수정, API 키 영속화(data/.apikey), DB 초기화 버튼, 임시 파일 자동 정리 | 보안·안정성 감사 |

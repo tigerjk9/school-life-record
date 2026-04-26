@@ -45,9 +45,9 @@
 
 | ID | 기능 | 구현 상태 |
 |----|------|----------|
-| F-001 | NICE XLS 5종 업로드 (교과/세특/창체/봉사/행특) | ✅ |
+| F-001 | NICE XLS 6종 업로드 (교과/세특/창체/봉사/행특/학년반이력) | ✅ |
 | F-002 | XLS 헤더 자동 탐지 + 학년/반 정보 추출 | ✅ |
-| F-003 | SQLite DB 구축 (5개 테이블, students 마스터) | ✅ |
+| F-003 | SQLite DB 구축 (6개 테이블, students 마스터) | ✅ |
 | F-004 | Gemini API 키 입력 + 모델 목록 로드 | ✅ |
 | F-005 | 4개 영역 중 선택적 일괄 점검 (세특/창체/봉사/행특) | ✅ |
 | F-006 | 학년/반 필터 점검 | ✅ |
@@ -69,6 +69,7 @@
 | F-109 | DB 자동 백업 (`record.db.bak.{timestamp}`) | ✅ |
 | F-110 | 결과 모달 상세 뷰 (원문 + Before + After) | ✅ |
 | F-111 | 사용 안내 탭 (설치·NICE·탭별·FAQ) | ✅ |
+| F-112 | DB 초기화 버튼 (업로드 탭, 전체 학생·점검 데이터 삭제) | ✅ |
 
 ### 3.3 해결된 버그
 
@@ -79,6 +80,10 @@
 | B-003 | 봉사 점검 시 content 없으면 기관명이 있어도 스킵 | organization 기반 fallback + AI 프롬프트에 기관명 포함 |
 | B-004 | 원본에만 있던 수정 제안(After) 누락 | `suggested_text` 전 스택 추가 (DB/API/Excel/UI) |
 | B-005 | 원본에만 있던 남은 시간 예상 누락 | `ProgressEvent.eta_sec` 추가 + UI 표시 |
+| B-006 | DB 재구축 시 기존 데이터 미삭제로 중복 적재 | build_db() 시작 시 DELETE 시퀀스 추가 |
+| B-007 | Excel '전체' 시트가 filter_mode 영향을 받아 필터된 데이터만 출력 | `all_rows` 고정 사용 |
+| B-008 | Gemini API 키가 서버 재시작 시 소실 | `data/.apikey` 파일로 영속화, 시작 시 자동 복원 |
+| B-009 | 서버 재시작 시 24h 지난 임시 업로드 파일이 쌓임 | lifespan에서 자동 정리 |
 
 ---
 
@@ -87,14 +92,14 @@
 ### 4.1 보안
 
 - 모든 통신은 `127.0.0.1`에서만 동작 (외부 노출 금지)
-- Gemini API 키는 서버 메모리에만 저장, DB/파일 기록 금지
+- Gemini API 키는 `data/.apikey` 파일로 영속화 (서버 재시작 후 자동 복원); 파일 시스템 외부 노출 금지
 - 학생 개인정보 포함 → 로그에도 학생명 최소 출력
 
 ### 4.2 성능
 
 - 학급 규모(30명 × 4영역 = ~120건) 점검이 5분 내 완료 (gemini-2.5-flash, 배치 3)
 - Gemini API 지수 백오프 재시도 (최대 3회)
-- 배치 크기 1~10 조정 가능
+- 배치 크기 1~5 조정 가능
 
 ### 4.3 호환성
 
@@ -113,6 +118,7 @@ FastAPI ─ uvicorn (127.0.0.1:8000)
    ├── /api/upload          (파일 업로드)
    ├── /api/db/build        (DB 구축)
    ├── /api/db/status       (DB 상태)
+   ├── /api/db/reset        (DB 전체 초기화)
    ├── /api/students        (학생 목록/상세)
    ├── /api/search          (키워드 전문 검색)
    ├── /api/gemini/connect  (API 키 검증 + 모델 목록)
@@ -134,6 +140,7 @@ FastAPI ─ uvicorn (127.0.0.1:8000)
 - `creative_activities` — 창체
 - `volunteer_activities` — 봉사 (organization, content)
 - `behavior_opinion` — 행특
+- `grade_history` — 학년반이력 (선택적)
 - `system_prompt` — 시스템 프롬프트
 - `inspections` — 점검 세션
 - `inspection_results` — 점검 결과 (violation, category, reason, evidence, **suggested_text**)
@@ -154,6 +161,7 @@ FastAPI ─ uvicorn (127.0.0.1:8000)
 | 1.0 | 2026-04-20 | 초기 구현 (4개 영역 점검, Excel 내보내기, 다크모드) |
 | 1.1 | 2026-04-21 | NICE XLS 파싱 버그 수정 (헤더 오감지, 학년/반 추출) + suggested_text 추가 |
 | 1.2 | 2026-04-21 | 봉사 점검 누락 버그 수정 + ETA 표시 + 프롬프트 기본값 복원 |
+| 1.3 | 2026-04-26 | 레드팀 감사: DB 중복 적재·Excel 필터 버그 수정, API 키 영속화, DB 초기화 버튼 추가 |
 
 ---
 
