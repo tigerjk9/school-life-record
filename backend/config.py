@@ -43,6 +43,7 @@ AREAS: tuple[str, ...] = (
     "creative_activities", # 창의적체험활동
     "volunteer_activities",# 봉사활동상황
     "behavior_opinion",    # 행동특성및종합의견
+    "grade_history",       # 학년반이력 (선택)
 )
 
 REQUIRED_AREA: str = "subject_grades"

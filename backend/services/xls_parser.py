@@ -47,6 +47,7 @@ COLUMN_MAPS: dict[str, list[str]] = {
     "hours": ["시간", "이수시간", "활동시간"],
     "organization": ["기관명", "봉사기관명", "장소", "주관기관명"],
     "date": ["날짜", "봉사일", "일자", "기간"],
+    "academic_year": ["학년도", "연도"],
 }
 
 
@@ -440,12 +441,34 @@ def parse_behavior(path: str | Path) -> dict[str, Any]:
     return res
 
 
+def parse_grade_history(path: str | Path) -> dict[str, Any]:
+    """학년반이력 파싱 (선택적)."""
+    res = _parse_generic(
+        path,
+        area="grade_history",
+        extra_keys=("grade_year", "academic_year"),
+    )
+    norm_rows = []
+    for r in res["rows"]:
+        norm_rows.append({
+            "grade": r["grade"],
+            "class_no": r["class_no"],
+            "number": r["number"],
+            "name": r["name"],
+            "grade_year": _to_int(r.get("grade_year")) or r["grade"],
+            "academic_year": _to_int(r.get("academic_year")),
+        })
+    res["rows"] = norm_rows
+    return res
+
+
 PARSERS = {
     "subject_grades": parse_subject_grades,
     "subject_details": parse_subject_details,
     "creative_activities": parse_creative,
     "volunteer_activities": parse_volunteer,
     "behavior_opinion": parse_behavior,
+    "grade_history": parse_grade_history,
 }
 
 

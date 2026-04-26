@@ -136,6 +136,7 @@ def db_status() -> DBStatusResponse:
             "creative_activities",
             "volunteer_activities",
             "behavior_opinion",
+            "grade_history",
         ):
             try:
                 records[table] = conn.execute(f"SELECT COUNT(*) AS c FROM {table}").fetchone()["c"]

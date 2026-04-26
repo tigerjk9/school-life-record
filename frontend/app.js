@@ -29,6 +29,7 @@ const AREA_DEFS = [
   { key: 'creative_activities',  order: '③', title: '창의적체험활동',    short: '창체', required: false },
   { key: 'volunteer_activities', order: '④', title: '봉사활동상황',      short: '봉사', required: false },
   { key: 'behavior_opinion',     order: '⑤', title: '행동특성및종합의견', short: '행특', required: false },
+  { key: 'grade_history',        order: '⑥', title: '학년반이력',        short: '학년반이력', required: false },
 ];
 const AREA_BY_KEY = Object.fromEntries(AREA_DEFS.map(a => [a.key, a]));
 const INSPECTABLE_AREAS = ['subject_details', 'creative_activities', 'volunteer_activities', 'behavior_opinion'];
@@ -826,7 +827,7 @@ async function startInspection() {
   const body = {
     areas,
     model,
-    batch_size: Math.min(Math.max(batch, 1), 10),
+    batch_size: Math.min(Math.max(batch, 1), 5),
     grade,
     class_no: classNo,
   };

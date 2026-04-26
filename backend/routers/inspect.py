@@ -110,8 +110,8 @@ async def inspect_start(req: InspectionStartRequest) -> InspectionStartResponse:
         raise HTTPException(400, "Gemini API 키가 설정되지 않았습니다. 먼저 /api/gemini/connect 를 호출하세요.")
     if not req.areas:
         raise HTTPException(400, "검사 영역을 1개 이상 선택하세요")
-    if req.batch_size < 1 or req.batch_size > 10:
-        raise HTTPException(400, "batch_size 는 1~10 사이여야 합니다")
+    if req.batch_size < 1 or req.batch_size > 5:
+        raise HTTPException(400, "batch_size 는 1~5 사이여야 합니다")
     try:
         inspection_id, total = await inspector.start_inspection(
             api_key=api_key,

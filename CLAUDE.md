@@ -2,7 +2,7 @@
 
 ## 프로젝트 개요
 
-원본 데스크톱 exe 2종(`생기부_DB_생성기.exe` + `생기부_AI_Inspector(v1.1).exe`)의 기능을 모두 반영하고 웹 환경의 편의 기능을 추가한 재구현 프로젝트. **구현 완료 상태** (v1.2, 2026-04-21).
+원본 데스크톱 exe 2종(`생기부_DB_생성기(v1.2).exe` + `생기부_AI_Inspector(v1.2).exe`)의 기능을 모두 반영하고 웹 환경의 편의 기능을 추가한 재구현 프로젝트. **구현 완료 상태** (v1.2, 2026-04-21).
 
 **원본 프로그램 제작:** 대전복수고등학교 박영준 교사
 **기술 스택:** Python FastAPI + SQLite + Google Gemini API + Vanilla JS
@@ -17,7 +17,8 @@
 - 세특/창체/봉사/행특 **4개 영역** AI 점검
 - 위반 근거(evidence, Before) + **수정 제안(suggested_text, After)**
 - 학년/반/학생 단위 필터 점검
-- 배치 크기 조정, API 키 검증 + 모델 자동 로드
+- 배치 크기 1~5 조정(기본값 3), API 키 검증 + 모델 자동 로드
+- **학년반이력(6번째 파일)** DB 저장 지원
 - **남은 시간 예상 표시** (ETA)
 - 결과 Excel 내보내기 (원본 1시트 → 4시트로 개선)
 - 상세 모달 비교 뷰
@@ -42,7 +43,7 @@
 - 프론트엔드 3파일: `frontend/index.html`, `frontend/style.css`, `frontend/app.js`
 - 백엔드 진입점: `backend/main.py` (FastAPI + StaticFiles mount)
 - DB 스키마: `backend/db/schema.sql`
-- CSS 캐시 무효화: 현재 `?v=6` — 프론트 변경 시 버전 번호 올릴 것 (`index.html`의 2개 위치)
+- CSS 캐시 무효화: 현재 `?v=8` — 프론트 변경 시 버전 번호 올릴 것 (`index.html`의 2개 위치)
 - 테마: `[data-theme="dark"]` 속성을 `<html>`에 설정, `localStorage`로 저장
 - DEFAULT_PROMPT 변경 시: `backend/database.py` 수정 → 기존 사용자는 **기본값 복원** 버튼으로 반영
 - Gemini 응답 필드 변경 시: `gemini_service.py` 프롬프트 + `inspector.py` 저장 로직 + `models.py` 동시 수정

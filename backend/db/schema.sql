@@ -66,6 +66,16 @@ CREATE TABLE IF NOT EXISTS behavior_opinion (
 );
 CREATE INDEX IF NOT EXISTS idx_behavior_student ON behavior_opinion(student_id);
 
+-- 학년반이력 (선택적 — 학생별 학년/반 이력)
+CREATE TABLE IF NOT EXISTS grade_history (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id  INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    grade_year  INTEGER,
+    class_no    INTEGER,
+    number      INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_grade_history_student ON grade_history(student_id);
+
 -- 시스템 프롬프트 (단일 행)
 CREATE TABLE IF NOT EXISTS system_prompt (
     id           INTEGER PRIMARY KEY AUTOINCREMENT,

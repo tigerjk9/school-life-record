@@ -13,6 +13,21 @@ from backend.services import xls_parser
 logger = logging.getLogger(__name__)
 
 
+def _lookup_student(conn, cache: dict, key: tuple[int, int, int, str]) -> int | None:
+    """학생 ID 조회만 수행 (없으면 None — 새 학생 생성 안 함)."""
+    if key in cache:
+        return cache[key]
+    grade, class_no, number, name = key
+    row = conn.execute(
+        "SELECT id FROM students WHERE grade=? AND class_no=? AND number=? AND name=?",
+        (grade, class_no, number, name),
+    ).fetchone()
+    if row:
+        cache[key] = row["id"]
+        return row["id"]
+    return None
+
+
 def _resolve_student(conn, cache: dict, key: tuple[int, int, int, str]) -> int:
     """학생 마스터 UPSERT 후 id 반환."""
     if key in cache:
@@ -180,6 +195,29 @@ def build_db(file_id_to_path: dict[str, str]) -> dict[str, Any]:
                     payload,
                 )
             records_per_area["behavior_opinion"] = len(payload)
+
+        # 6) 학년반이력 (선택적 — 학생 마스터가 없으면 스킵)
+        if "grade_history" in parsed:
+            payload = []
+            for r in parsed["grade_history"]["rows"]:
+                key = (r["grade"], r["class_no"], r["number"], r["name"])
+                sid = _lookup_student(conn, student_cache, key)
+                if sid is None:
+                    continue
+                payload.append((
+                    sid,
+                    r.get("grade_year"),
+                    r.get("class_no"),
+                    r.get("number"),
+                ))
+            if payload:
+                conn.executemany(
+                    """INSERT INTO grade_history
+                    (student_id, grade_year, class_no, number)
+                    VALUES (?, ?, ?, ?)""",
+                    payload,
+                )
+            records_per_area["grade_history"] = len(payload)
 
     students_count = len(student_cache)
     return {
