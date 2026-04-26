@@ -85,6 +85,12 @@ def build_db(file_id_to_path: dict[str, str]) -> dict[str, Any]:
     student_cache: dict[tuple[int, int, int, str], int] = {}
 
     with transaction() as conn:
+        # 기존 데이터 전체 초기화 (순서 중요: FK 제약 때문에 inspection_results → students 순)
+        # students 삭제 시 CASCADE로 모든 content 테이블 자동 삭제됨
+        conn.execute("DELETE FROM inspection_results")
+        conn.execute("DELETE FROM inspections")
+        conn.execute("DELETE FROM students")
+
         # 1) 교과성적 (학생 마스터 생성)
         sg_rows = parsed[REQUIRED_AREA]["rows"]
         sg_payload = []

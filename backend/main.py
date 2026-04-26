@@ -6,17 +6,18 @@
 from __future__ import annotations
 
 import logging
+import time
 from contextlib import asynccontextmanager
 from logging.handlers import RotatingFileHandler
-from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.config import LOG_DIR
+from backend.config import API_KEY_FILE, LOG_DIR, UPLOAD_DIR
 from backend.database import init_db
 from backend.routers import export, inspect, students, upload
+from backend import state
 
 
 def _configure_logging() -> None:
@@ -38,10 +39,40 @@ def _configure_logging() -> None:
     root.setLevel(logging.INFO)
 
 
+def _cleanup_upload_dir() -> None:
+    """24시간 이상 지난 임시 업로드 파일 삭제."""
+    cutoff = time.time() - 86400
+    deleted = 0
+    for f in UPLOAD_DIR.glob("*"):
+        try:
+            if f.is_file() and f.stat().st_mtime < cutoff:
+                f.unlink()
+                deleted += 1
+        except OSError:
+            pass
+    if deleted:
+        logging.getLogger(__name__).info("[startup] 임시 파일 %d개 삭제", deleted)
+
+
+def _restore_api_key() -> None:
+    """저장된 API 키가 있으면 복원."""
+    try:
+        key = API_KEY_FILE.read_text(encoding="utf-8").strip()
+        if key:
+            state.set_api_key(key)
+            logging.getLogger(__name__).info("[startup] API 키 복원 완료")
+    except FileNotFoundError:
+        pass
+    except Exception:
+        logging.getLogger(__name__).warning("[startup] API 키 복원 실패", exc_info=True)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     _configure_logging()
     init_db()
+    _cleanup_upload_dir()
+    _restore_api_key()
     logging.getLogger(__name__).info("Application startup complete")
     yield
 

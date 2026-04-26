@@ -17,7 +17,7 @@ from backend.config import (
     MAX_UPLOAD_SIZE,
     UPLOAD_DIR,
 )
-from backend.database import get_connection
+from backend.database import get_connection, transaction
 from backend.models import (
     DBBuildRequest,
     DBBuildResponse,
@@ -116,6 +116,20 @@ async def build_database(req: DBBuildRequest) -> DBBuildResponse:
         students=result["students"],
         records_per_area=result["records_per_area"],
     )
+
+
+@router.post("/db/reset")
+async def reset_database() -> dict:
+    """모든 학생·점검 데이터를 삭제한다 (시스템 프롬프트는 유지)."""
+    try:
+        with transaction() as conn:
+            conn.execute("DELETE FROM inspection_results")
+            conn.execute("DELETE FROM inspections")
+            conn.execute("DELETE FROM students")
+    except Exception as e:
+        logger.exception("[db/reset] 실패")
+        raise HTTPException(500, f"DB 초기화 실패: {e}") from e
+    return {"ok": True, "message": "DB가 초기화되었습니다"}
 
 
 @router.get("/db/status", response_model=DBStatusResponse)

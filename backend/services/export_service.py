@@ -120,9 +120,9 @@ def export_inspection(inspection_id: int, filter_mode: str = "all") -> tuple[byt
     ws = wb.add_worksheet("정상")
     _write_table(ws, normals, formats)
 
-    # 4) 전체
+    # 4) 전체 (필터 무관하게 항상 전체 레코드)
     ws = wb.add_worksheet("전체")
-    _write_table(ws, target_all, formats)
+    _write_table(ws, all_rows, formats)
 
     wb.close()
     data = buf.getvalue()

@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 from backend import state
+from backend.config import API_KEY_FILE
 from backend.database import DEFAULT_PROMPT, get_connection
 from backend.models import (
     GeminiConnectRequest,
@@ -35,6 +36,11 @@ async def gemini_connect(req: GeminiConnectRequest) -> GeminiConnectResponse:
         logger.exception("[gemini/connect] 실패")
         raise HTTPException(400, f"Gemini 연결 실패: {e}") from e
     state.set_api_key(req.api_key.strip())
+    try:
+        API_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        API_KEY_FILE.write_text(req.api_key.strip(), encoding="utf-8")
+    except Exception:
+        logger.warning("[gemini/connect] API 키 파일 저장 실패", exc_info=True)
     return GeminiConnectResponse(ok=True, models=models)
 
 

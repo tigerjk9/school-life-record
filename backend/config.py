@@ -31,6 +31,7 @@ def _resolve(path_str: str) -> Path:
 DB_PATH: Path = _resolve(os.environ.get("DB_PATH", "data/record.db"))
 UPLOAD_DIR: Path = _resolve(os.environ.get("UPLOAD_DIR", "data/uploads"))
 LOG_DIR: Path = _resolve(os.environ.get("LOG_DIR", "logs"))
+API_KEY_FILE: Path = _resolve("data/.apikey")
 
 # Constraints
 MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB

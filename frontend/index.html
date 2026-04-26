@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>생활기록부 점검</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <link rel="stylesheet" href="style.css?v=8">
+  <link rel="stylesheet" href="style.css?v=9">
   <script>
     (function(){
       var t = localStorage.getItem('theme');
@@ -62,6 +62,10 @@
         </div>
         <button id="btn-db-build" class="btn btn-primary btn-md" disabled>
           <span class="btn-label">DB 구축</span>
+          <span class="spinner" hidden></span>
+        </button>
+        <button id="btn-db-reset" class="btn btn-danger btn-md" title="모든 학생 및 점검 데이터를 삭제합니다">
+          <span class="btn-label">DB 초기화</span>
           <span class="spinner" hidden></span>
         </button>
       </div>
@@ -627,6 +631,6 @@
   <!-- 토스트 -->
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
-  <script src="app.js?v=8"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

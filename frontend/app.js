@@ -441,6 +441,34 @@ async function buildDatabase() {
   }
 }
 
+async function resetDatabase() {
+  if (!confirm('모든 학생 및 점검 데이터가 삭제됩니다. 계속하시겠습니까?')) return;
+  const btn = $('#btn-db-reset');
+  const spinner = btn.querySelector('.spinner');
+  const label = btn.querySelector('.btn-label');
+  btn.disabled = true;
+  spinner.hidden = false;
+  label.textContent = '초기화 중…';
+  try {
+    await api('POST', '/api/db/reset');
+    state.uploadedFiles = {};
+    state.students = [];
+    state.classesByGrade = {};
+    renderUploadCards();
+    const resultBox = $('#db-build-result');
+    resultBox.hidden = true;
+    showToast('DB가 초기화되었습니다', 'success');
+    await refreshDbStatus();
+    updateDbBuildButton();
+  } catch (e) {
+    showToast(e.message || 'DB 초기화 실패', 'error', 6000);
+  } finally {
+    spinner.hidden = true;
+    label.textContent = 'DB 초기화';
+    btn.disabled = false;
+  }
+}
+
 /* =============================================================
    탭 2: 학생 조회
    ============================================================= */
@@ -1215,6 +1243,7 @@ function bindEvents() {
   // 업로드
   renderUploadCards();
   $('#btn-db-build').addEventListener('click', buildDatabase);
+  $('#btn-db-reset').addEventListener('click', resetDatabase);
 
   // 학생 조회
   $('#btn-search').addEventListener('click', () => {
