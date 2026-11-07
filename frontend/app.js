@@ -760,7 +760,7 @@ function populateModelSelect() {
   }
   sel.disabled = false;
   // Gemini API는 "models/gemini-2.5-flash-..." 형태로 반환하므로 부분 문자열로 비교
-  const preferredKeywords = ['gemini-2.5-flash-preview', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash'];
+  const preferredKeywords = ['gemini-2.5-flash-preview', 'gemini-3.5-flash-lite', 'gemini-2.5-pro', 'gemini-2.0-flash'];
   const isPreferred = (m) => preferredKeywords.some(kw => m.includes(kw));
   const ordered = [
     ...state.availableModels.filter(m => isPreferred(m)),

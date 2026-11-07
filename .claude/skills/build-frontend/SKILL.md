@@ -48,7 +48,7 @@ frontend/
 
 ### 탭 3: AI 점검
 - Gemini API 키 입력 (password 타입, 로컬스토리지에 저장 옵션)
-- 모델 선택: gemini-2.5-flash (추천) / gemini-2.5-pro / gemini-2.0-flash-lite
+- 모델 선택: gemini-3.5-flash-lite (추천) / gemini-2.5-pro / gemini-2.0-flash-lite
 - 배치 크기: 1~5 슬라이더 (기본값 3)
 - 점검 범위: 세특 / 창체 / 봉사 / 행동특성 체크박스
 - "검사 시작" 버튼
